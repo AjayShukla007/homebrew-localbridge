@@ -1,0 +1,54 @@
+name: Homebrew Tap Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test-bot:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+          - macos-15-intel
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout tap repository
+        uses: actions/checkout@v4
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tap checked-out repository
+        run: |
+          brew untap AjayShukla007/localbridge 2>/dev/null || true
+          brew tap AjayShukla007/localbridge "${{ github.workspace }}"
+
+      - name: Style check
+        run: brew style AjayShukla007/localbridge
+
+      - name: Audit formula
+        run: brew audit --strict --online AjayShukla007/localbridge/localbridge
+
+      - name: Install formula
+        run: brew install localbridge
+
+      - name: Run Homebrew formula test
+        run: brew test localbridge
+
+      - name: Verify CLI binaries
+        run: |
+          localbridge version
+          lb version
+
+      - name: Uninstall formula
+        if: always()
+        run: brew uninstall localbridge || true
