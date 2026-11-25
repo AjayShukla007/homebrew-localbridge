@@ -19,18 +19,17 @@ jobs:
           - ubuntu-24.04-arm
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout tap repository
-        uses: actions/checkout@v4
-
       - name: Set up Homebrew
-        uses: Homebrew/actions/setup-homebrew@master
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@main
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Tap checked-out repository
+      - name: Ensure tap is registered
         run: |
-          brew untap AjayShukla007/localbridge 2>/dev/null || true
-          brew tap AjayShukla007/localbridge "${{ github.workspace }}"
+          if [ -z "${{ steps.set-up-homebrew.outputs.tap-name }}" ]; then
+            brew tap AjayShukla007/localbridge "${{ github.workspace }}"
+          fi
 
       - name: Style check
         run: brew style AjayShukla007/localbridge
